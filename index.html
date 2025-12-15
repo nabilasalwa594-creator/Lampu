@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Lampu Meja</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e0e0e0; /* Latar belakang terang seperti siang */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            transition: background-color 1s ease;
+        }
+        body.night {
+            background-color: #0a0a0a; /* Sangat gelap untuk mode malam */
+            color: #ccc;
+        }
+        .lamp-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .lamp {
+            width: 150px;
+            height: 200px;
+            background-color: #8b4513; /* Coklat untuk stand lampu */
+            border-radius: 10px 10px 0 0;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .lamp-shade {
+            width: 120px;
+            height: 80px;
+            background-color: #333;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+        }
+        .lamp.on .lamp-shade {
+            background-color: #ffeb3b; /* Kuning terang saat on */
+            box-shadow: 0 0 30px rgba(255, 235, 59, 0.9), 0 0 60px rgba(255, 235, 59, 0.6); /* Glow cahaya */
+            animation: flicker 0.1s infinite alternate; /* Efek flicker */
+        }
+        @keyframes flicker {
+            0% { opacity: 1; }
+            100% { opacity: 0.95; }
+        }
+        .light-beam {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 150px;
+            background: radial-gradient(ellipse at center, rgba(255, 235, 59, 0.4) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        .lamp.on .light-beam {
+            opacity: 1;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Responsivitas untuk HP (layar < 600px) */
+        @media (max-width: 600px) {
+            .lamp {
+                width: 120px;
+                height: 160px;
+            }
+            .lamp-shade {
+                width: 100px;
+                height: 60px;
+            }
+            .light-beam {
+                width: 80px;
+                height: 120px;
+            }
+            button {
+                padding: 12px 18px;
+                font-size: 14px;
+            }
+            .status {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body id="body">
+    <div class="lamp-container">
+        <div class="lamp" id="lamp">
+            <div class="lamp-shade"></div>
+            <div class="light-beam"></div>
+        </div>
+    </div>
+    <div class="buttons">
+        <button id="toggleBtn">Saklar Lampu</button>
+        <button id="nightModeBtn">Mode Malam</button>
+    </div>
+    <div class="status" id="status">Lampu Mati</div>
+
+    <!-- Elemen audio untuk suara klik dan hum -->
+    <audio id="clickSound" preload="auto">
+        <source src="https://www.soundjay.com/misc/sounds/click.wav" type="audio/wav"> <!-- Suara klik mekanis -->
+        Browser Anda tidak mendukung audio.
+    </audio>
+    <audio id="humSound" preload="auto" loop>
+        <source src="https://www.soundjay.com/misc/sounds/hum.wav" type="audio/wav"> <!-- Suara hum lampu (loop saat on) -->
+        Browser Anda tidak mendukung audio.
+    </audio>
+
+    <script>
+        const lamp = document.getElementById('lamp');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const nightModeBtn = document.getElementById('nightModeBtn');
+        const statusText = document.getElementById('status');
+        const body = document.getElementById('body');
+        const clickSound = document.getElementById('clickSound');
+        const humSound = document.getElementById('humSound');
+
+        let isOn = false;
+        let isNightMode = false;
+
+        function toggleLamp() {
+            isOn = !isOn;
+            lamp.classList.toggle('on');
+            statusText.textContent = isOn ? 'Lampu Hidup' : 'Lampu Mati';
+            
+            // Mainkan suara klik
+            clickSound.currentTime = 0;
+            clickSound.play().catch(e => console.log('Audio klik tidak bisa dimainkan:', e));
+            
+            // Mainkan atau hentikan suara hum
+            if (isOn) {
+                humSound.play().catch(e => console.log('Audio hum tidak bisa dimainkan:', e));
+            } else {
+                humSound.pause();
+                humSound.currentTime = 0;
+            }
+        }
+
+        function toggleNightMode() {
+            isNightMode = !isNightMode;
+            body.classList.toggle('night');
+            nightModeBtn.textContent = isNightMode ? 'Mode Siang' : 'Mode Malam';
+            if (isNightMode && isOn) {
+                toggleLamp(); // Matikan lampu saat masuk mode malam
+            }
+        }
+
+        // Event listener
+        lamp.addEventListener('click', toggleLamp);
+        toggleBtn.addEventListener('click', toggleLamp);
+        nightModeBtn.addEventListener('click', toggleNightMode);
+    </script>
+</body>
+</html>
